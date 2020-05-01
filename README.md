@@ -6,21 +6,11 @@ windows下单片机开发有keil工具链，而且代码实例很多。
 
 但是Linux下使用sdcc编译器搭配codeblocks开发而且代码与Windows下不同。
 
-C51部分代码与知乎专栏、微信公众号文章同步
-
-知乎专栏：<a href="https://zhuanlan.zhihu.com/c_1183488323446931456">专栏</a>
-
 ## 准备
 
 Linux使用的是SDCC编译器
 
-![avater](./img/sdcc.png)
-
-使用Codeblocks开发工具
-
-![avater](./img/codeblocks.png)
-
-***在开发熟练之后，会考虑移植到Qt下开发***
+![sdcc](http://q9516on84.bkt.clouddn.com/sdcc-version.png)
 
 烧录工具使用stcflash.py(https://github.com/laborer/stcflash) + python-serial
 
@@ -28,17 +18,7 @@ Linux使用的是SDCC编译器
 
 本仓库代码有部分来自普中单片机开发版配套光盘，我将其转换为Linux下。
 
-系统环境：linux mint 18.3 xfce 64bit（基于ubuntu16.04.01）
-
-## linux配置stm32开发环境概述
-
-在linux系统下基于codeblocks和SDCC，使用codeblocks可以自动生成hex文件，而不用再安装其他软件来转换格式，烧写程序到51单片机使用stcflash，使用python，需要安装serial串口模块。
-
-关于USB转串口驱动问题 ，在linux下已经集成好了CH340和PL2302的驱动（linux mint（ubuntu16.04）是这样，其他发行版不清楚），一连接电脑在/dev/下面就会自动有/dev/ttyUSB0，表示有一个串口设备连接了电脑。
-
-### codeblocks
-
-　　Manjaro Linux源里面包含codeblocks最新版的软件包，直接安装就可以了。其他linux发行版也是能在官网找到安装包的，具体安装就不赘述了，相信在linux玩51的已经有这些基础的了。
+系统环境：Manjaro Linux 19.0 dde 64bit
 
 ## SDCC
 
@@ -52,7 +32,7 @@ sdcc -v
 
 查看sdcc是否正确安装，正确安装执行上述代码会返回版本号
 
-![avater](./img/sdcc_version.png)
+![avater](http://q9516on84.bkt.clouddn.com/sdcc-version.png)
 
 ### 编译
 
@@ -83,47 +63,64 @@ makebin main.hex main.bin
 
 ```bash
 makebin <main.ihx> main.bin
-
+```
 然后检查USB连接：
-　　a.  $  lsmod | grep usbserial
-　　　　如果输出有 usbserial，说明
-系统支持USB转串口。
-　　b. 用USB数据线将开发板与电脑
-连接起来，运行
-
-
+a.  
+```
+$  lsmod | grep usbserial
+```
+如果输出有 usbserial，说明系统支持USB转串口。
+b. 用USB数据线将开发板与电脑连接起来，运行
+```
 　$ ls /dev/ttyUSB*
-　　　　如果输出有/dev/ttyUSB0或1
-等等，说明系统已正确识别该USB转串
-口设备。
-　　　　也可以用“#lsusb”命令查看是
-否有“USB-Serial adapter”类似的设
-备。
-　　c. 设置串口为ttyUSB0（可以不
-做，在下载时手动指定--port）:
-　　　　$ dmesg | grep ttyUSB0
-　　d. 关闭开发板电源，运行
-stcflash.py烧写程序，当出现如下字样
-时，打开开发板电源，即开始下载：
+```
+如果输出有/dev/ttyUSB0或1等等，说明系统已正确识别该USB转串口设备。
+也可以用“#lsusb”命令查看是否有“USB-Serial adapter”类似的设备。
 
-## stcflash
-
-使用的时候要把stcflash.py这个文件复制到hex文件同目录下，假设需要烧写的文件是test.hex ，那么在终端进入到test.hex 目录下，执行下面语句
+c. 设置串口为ttyUSB0（可以不做，在下载时手动指定--port）:
+```
+$ dmesg | grep ttyUSB0
+```
+d. 关闭开发板电源，使用的时候要把stcflash.py这个文件复制到hex文件同目录下，假设需要烧写的文件是test.hex ，那么在终端进入到test.hex 目录下，执行下面语句
 
 ```bash
-　　python stcflash.py test.hex
+stcflash.py test.bin
 ```
 
-以我自己的一个工程为例，需要烧写的文件为sonar.hex ，此时会有如下图所示
+此时会提示：
 
-![avater](./img/connecting.png)
+![提示错误](http://q9516on84.bkt.clouddn.com/c51beep6.png)
+
+表示没有权限，解决方法有两个：
+
+一为赋予root权限：
+
+```
+sudo stcflash.py test.bin
+```
+
+二是永久解决这个问题：
+
+```
+/etc/udev/rules.d/50-udev-default.rules
+
+KERNEL=="ttyUSB0",GROUP="uucp",MODE="0666"
+
+KERNEL=="ttyS0",GROUP="uucp",MODE="0666"
+```
+
+重启后就好了，不用每次都输入sudo。
+
+以我自己的一个工程为例，需要烧写的文件为test.hex ，此时会有如下图所示
+
+![等待](http://q9516on84.bkt.clouddn.com/c51beep5.png)
 
 此时要关闭51单片机电源然后重启，就像在win系统下一样，然后会看到以下情况：
 
-![avater](./img/connected.png)
+![烧录](http://q9516on84.bkt.clouddn.com/c51beep6.png)
 
 有晶振频率，芯片型号，ROM大小等信息。
 
-关于codeblocks建立MCS51工程的教程建议参考篇首提供的链接，这里就不再叙述了。
-
 ## 参考资料
+
+[1]https://blog.csdn.net/hjd03132301/article/details/17298103
